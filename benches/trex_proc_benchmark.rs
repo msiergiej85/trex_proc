@@ -1,10 +1,10 @@
 use criterion::{Criterion, async_executor::FuturesExecutor, criterion_group, criterion_main};
 use rand::RngExt;
 use trex_proc::trex::Trex;
-use trex_proc::{Transaction, TransactionType};
+use trex_proc::{Transaction, TransactionId, TransactionType};
 
 const NUM_CLIENTS: u16 = 500;
-const NUM_TRANSACTIONS: usize = 50000;
+const NUM_TRANSACTIONS: TransactionId = 50000;
 const DISPUTE_RATE: f64 = 0.01;
 
 fn bench_fuzzy(c: &mut Criterion) {
@@ -16,7 +16,7 @@ fn bench_fuzzy(c: &mut Criterion) {
             for tx_id in 0..NUM_TRANSACTIONS {
                 let tx = Transaction {
                     client: rng.random_range(1..=NUM_CLIENTS),
-                    tx: tx_id as u32,
+                    tx: tx_id,
                     amount: rng.random_range(0.0..=10000.0),
                     r#type: if rng.random_bool(0.52) {
                         TransactionType::Deposit

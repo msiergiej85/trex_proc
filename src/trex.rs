@@ -1,9 +1,9 @@
-use crate::{Client, ClientId, Coins, Transaction, TransactionType};
+use crate::{Client, ClientId, Coins, Transaction, TransactionId, TransactionType};
 use log::info;
 use std::collections::{HashMap, hash_map::Entry};
 
 struct Tx {
-    pub id: u32,
+    pub id: TransactionId,
     pub r#type: TransactionType,
     pub amount: Coins,
 }
@@ -139,7 +139,7 @@ impl ClientState {
         self.history.push(tx);
     }
 
-    fn find_tx(&self, id: u32) -> Option<Coins> {
+    fn find_tx(&self, id: TransactionId) -> Option<Coins> {
         self.history
             .iter()
             .rfind(|tx| {
@@ -152,7 +152,7 @@ impl ClientState {
             .map(|tx| tx.amount)
     }
 
-    fn has_open_dispute(&self, id: u32) -> bool {
+    fn has_open_dispute(&self, id: TransactionId) -> bool {
         self.history
             .iter()
             .rfind(|tx| tx.id == id)
