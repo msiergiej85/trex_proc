@@ -19,7 +19,8 @@ tokio-stream = "0.1.19"
 log = "0.4.35"
 
 [dev-dependencies]
-criterion = "0.8.2"
+criterion = { version = "0.8.2", features = ["async_futures"] }
+rand = "0.10.3"
 
 [[bench]]
 name = "trex_proc_benchmark"

@@ -28,7 +28,8 @@ pub struct Trex {
     clients: HashMap<ClientId, ClientState>,
 }
 
-/// Note: Methods are async for future-proofing (wrap HashMap in RWLock and Clients as well).
+/// Note: Methods are async for future-proofing (wrap HashMap in RWLock and Clients as well,
+/// put mpsc channel between process_transaction() call task actually processing it).
 impl Trex {
     pub async fn process_transaction(&mut self, transaction: Transaction) {
         match self.clients.entry(transaction.client) {
@@ -131,7 +132,7 @@ impl ClientState {
             }
         }
         self.store_tx(tx);
-        return true;
+        true
     }
 
     fn store_tx(&mut self, tx: Tx) {
