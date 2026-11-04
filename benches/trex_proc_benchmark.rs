@@ -24,7 +24,7 @@ fn bench_fuzzy(c: &mut Criterion) {
                         TransactionType::Withdrawal
                     },
                 };
-                trex.process_transaction(tx.clone()).await;
+                trex.process_transaction(tx.clone());
                 if rng.random_bool(DISPUTE_RATE) {
                     pending.push(tx)
                 }
@@ -43,7 +43,7 @@ fn bench_fuzzy(c: &mut Criterion) {
                             client: transaction.client,
                             amount: 0.0,
                         };
-                        trex.process_transaction(tx.clone()).await;
+                        trex.process_transaction(tx.clone());
                         pending.push(tx);
                     } else if matches!(transaction.r#type, TransactionType::Dispute) {
                         trex.process_transaction(Transaction {
@@ -55,8 +55,7 @@ fn bench_fuzzy(c: &mut Criterion) {
                             },
                             client: transaction.client,
                             amount: 0.0,
-                        })
-                        .await;
+                        });
                     }
                 }
             }
@@ -72,8 +71,7 @@ fn bench_fuzzy(c: &mut Criterion) {
                         },
                         client: transaction.client,
                         amount: 0.0,
-                    })
-                    .await;
+                    });
                 }
             }
         });

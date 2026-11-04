@@ -28,10 +28,8 @@ pub struct Trex {
     clients: HashMap<ClientId, ClientState>,
 }
 
-/// Note: Methods are async for future-proofing (wrap HashMap in RWLock and Clients as well,
-/// put mpsc channel between process_transaction() call task actually processing it).
 impl Trex {
-    pub async fn process_transaction(&mut self, transaction: Transaction) {
+    pub fn process_transaction(&mut self, transaction: Transaction) {
         match self.clients.entry(transaction.client) {
             Entry::Occupied(entry) => {
                 entry.into_mut().handle_transaction(transaction.into());
@@ -54,11 +52,11 @@ impl Trex {
         }
     }
 
-    pub async fn clients(&self) -> Vec<ClientId> {
+    pub fn clients(&self) -> Vec<ClientId> {
         self.clients.keys().cloned().collect()
     }
 
-    pub async fn client(&self, id: ClientId) -> Option<Client> {
+    pub fn client(&self, id: ClientId) -> Option<Client> {
         self.clients.get(&id).map(|client| client.state.clone())
     }
 }
@@ -176,10 +174,9 @@ mod tests {
             client: 1,
             tx: 1,
             amount: 100.0,
-        })
-        .await;
+        });
 
-        let client = trex.client(1).await.unwrap();
+        let client = trex.client(1).unwrap();
         assert_eq!(client.client, 1);
         assert_eq!(client.available, 100.0);
         assert_eq!(client.total, 100.0);
@@ -191,17 +188,15 @@ mod tests {
             client: 1,
             tx: 1,
             amount: 100.0,
-        })
-        .await;
+        });
         trex.process_transaction(Transaction {
             r#type: TransactionType::Withdrawal,
             client: 1,
             tx: 2,
             amount: 50.0,
-        })
-        .await;
+        });
 
-        let client = trex.client(1).await.unwrap();
+        let client = trex.client(1).unwrap();
         assert_eq!(client.available, 150.0);
         assert_eq!(client.total, 150.0);
 
@@ -210,17 +205,15 @@ mod tests {
             client: 2,
             tx: 2,
             amount: 200.0,
-        })
-        .await;
+        });
         trex.process_transaction(Transaction {
             r#type: TransactionType::Deposit,
             client: 2,
             tx: 3,
             amount: 150.0,
-        })
-        .await;
+        });
 
-        let client = trex.client(2).await.unwrap();
+        let client = trex.client(2).unwrap();
         assert_eq!(client.total, -50.0);
     }
 
@@ -232,17 +225,15 @@ mod tests {
             client: 1,
             tx: 1,
             amount: 100.0,
-        })
-        .await;
+        });
         trex.process_transaction(Transaction {
             r#type: TransactionType::Dispute,
             client: 1,
             tx: 1,
             amount: 0.0,
-        })
-        .await;
+        });
 
-        let client = trex.client(1).await.unwrap();
+        let client = trex.client(1).unwrap();
         assert_eq!(client.available, 0.0);
         assert_eq!(client.held, 100.0);
         assert_eq!(client.total, 100.0);
@@ -252,18 +243,16 @@ mod tests {
             client: 1,
             tx: 2,
             amount: 10.0,
-        })
-        .await;
+        });
 
         trex.process_transaction(Transaction {
             r#type: TransactionType::Resolve,
             client: 1,
             tx: 1,
             amount: 0.0,
-        })
-        .await;
+        });
 
-        let client = trex.client(1).await.unwrap();
+        let client = trex.client(1).unwrap();
         assert_eq!(client.available, 110.0);
         assert_eq!(client.held, 0.0);
         assert_eq!(client.total, 110.0);
@@ -273,17 +262,15 @@ mod tests {
             client: 1,
             tx: 2,
             amount: 0.0,
-        })
-        .await;
+        });
         trex.process_transaction(Transaction {
             r#type: TransactionType::Chargeback,
             client: 1,
             tx: 2,
             amount: 0.0,
-        })
-        .await;
+        });
 
-        let client = trex.client(1).await.unwrap();
+        let client = trex.client(1).unwrap();
         assert_eq!(client.available, 100.0);
         assert_eq!(client.held, 0.0);
         assert_eq!(client.total, 100.0);
@@ -298,31 +285,27 @@ mod tests {
             client: 1,
             tx: 1,
             amount: 100.0,
-        })
-        .await;
+        });
         trex.process_transaction(Transaction {
             r#type: TransactionType::Deposit,
             client: 2,
             tx: 1,
             amount: 10.0,
-        })
-        .await;
+        });
         trex.process_transaction(Transaction {
             r#type: TransactionType::Dispute,
             client: 2,
             tx: 1,
             amount: 0.0,
-        })
-        .await;
+        });
         trex.process_transaction(Transaction {
             r#type: TransactionType::Chargeback,
             client: 2,
             tx: 1,
             amount: 0.0,
-        })
-        .await;
+        });
 
-        let client = trex.client(2).await.unwrap();
+        let client = trex.client(2).unwrap();
         assert_eq!(client.total, 0.0);
         assert!(client.locked);
 
@@ -332,9 +315,8 @@ mod tests {
             client: 2,
             tx: 2,
             amount: 50.0,
-        })
-        .await;
-        assert_eq!(trex.client(2).await.unwrap().total, 0.0);
+        });
+        assert_eq!(trex.client(2).unwrap().total, 0.0);
 
         // ignore dispute on non-existing client
         trex.process_transaction(Transaction {
@@ -342,9 +324,8 @@ mod tests {
             client: 3,
             tx: 2,
             amount: 50.0,
-        })
-        .await;
-        assert!(trex.client(3).await.is_none());
+        });
+        assert!(trex.client(3).is_none());
 
         // ignore dispute on non-existing transaction
         trex.process_transaction(Transaction {
@@ -352,9 +333,8 @@ mod tests {
             client: 3,
             tx: 2,
             amount: 50.0,
-        })
-        .await;
-        assert!(trex.client(3).await.is_none());
+        });
+        assert!(trex.client(3).is_none());
 
         // ignore chargeback on transaction without open dispute
         trex.process_transaction(Transaction {
@@ -362,9 +342,8 @@ mod tests {
             client: 1,
             tx: 1,
             amount: 0.0,
-        })
-        .await;
-        assert_eq!(trex.client(1).await.unwrap().available, 100.0);
+        });
+        assert_eq!(trex.client(1).unwrap().available, 100.0);
 
         // ignore resolve on transaction without open dispute
         trex.process_transaction(Transaction {
@@ -372,8 +351,7 @@ mod tests {
             client: 1,
             tx: 1,
             amount: 0.0,
-        })
-        .await;
-        assert_eq!(trex.client(1).await.unwrap().available, 100.0);
+        });
+        assert_eq!(trex.client(1).unwrap().available, 100.0);
     }
 }

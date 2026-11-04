@@ -29,12 +29,12 @@ async fn main() -> eyre::Result<()> {
         let Ok(transaction) = record.inspect_err(|err| warn!("invalid transaction {err:#}")) else {
             continue;
         };
-        trex.process_transaction(transaction).await;
+        trex.process_transaction(transaction);
     }
 
     let mut writer = AsyncSerializer::from_writer(tokio::io::stdout());
-    for client_id in trex.clients().await {
-        let Some(client) = trex.client(client_id).await else {
+    for client_id in trex.clients() {
+        let Some(client) = trex.client(client_id) else {
             debug!("client {} does not exist anymore", client_id);
             continue;
         };
