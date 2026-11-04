@@ -10,6 +10,7 @@ name = "trex_proc"
 name = "trex_proc"
 
 [dependencies]
+rust_decimal = "1.43.0"
 csv-async = { version = "1.3.1", features = ["tokio", "serde", "with_serde"] }
 env_logger = "0.11.11"
 eyre = "0.6.14"

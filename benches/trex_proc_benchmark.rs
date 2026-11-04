@@ -17,7 +17,8 @@ fn bench_fuzzy(c: &mut Criterion) {
                 let tx = Transaction {
                     client: rng.random_range(1..=NUM_CLIENTS),
                     tx: tx_id,
-                    amount: rng.random_range(0.0..=10000.0),
+                    amount: rust_decimal::Decimal::from_f64_retain(rng.random_range(0.0..=10000.0))
+                        .unwrap(),
                     r#type: if rng.random_bool(0.52) {
                         TransactionType::Deposit
                     } else {
@@ -41,7 +42,7 @@ fn bench_fuzzy(c: &mut Criterion) {
                             tx: transaction.tx,
                             r#type: TransactionType::Dispute,
                             client: transaction.client,
-                            amount: 0.0,
+                            amount: rust_decimal::Decimal::new(0, 0),
                         };
                         trex.process_transaction(tx.clone());
                         pending.push(tx);
@@ -54,7 +55,7 @@ fn bench_fuzzy(c: &mut Criterion) {
                                 TransactionType::Chargeback
                             },
                             client: transaction.client,
-                            amount: 0.0,
+                            amount: rust_decimal::Decimal::new(0, 0),
                         });
                     }
                 }
@@ -70,7 +71,7 @@ fn bench_fuzzy(c: &mut Criterion) {
                             TransactionType::Chargeback
                         },
                         client: transaction.client,
-                        amount: 0.0,
+                        amount: rust_decimal::Decimal::new(0, 0),
                     });
                 }
             }
