@@ -77,6 +77,13 @@ impl ClientState {
                 self.state.total += tx.amount;
             }
             TransactionType::Withdrawal => {
+                if self.state.available < tx.amount {
+                    info!(
+                        "Withdrawal ({}) for {} rejected - not enough funds",
+                        tx.id, self.state.client,
+                    );
+                    return false;
+                }
                 self.state.available -= tx.amount;
                 self.state.total -= tx.amount;
             }
@@ -201,20 +208,20 @@ mod tests {
         assert_eq!(client.total, 150.0);
 
         trex.process_transaction(Transaction {
-            r#type: TransactionType::Withdrawal,
-            client: 2,
-            tx: 2,
-            amount: 200.0,
-        });
-        trex.process_transaction(Transaction {
             r#type: TransactionType::Deposit,
             client: 2,
             tx: 3,
-            amount: 150.0,
+            amount: 200.0,
+        });
+        trex.process_transaction(Transaction {
+            r#type: TransactionType::Withdrawal,
+            client: 2,
+            tx: 2,
+            amount: 50.0,
         });
 
         let client = trex.client(2).unwrap();
-        assert_eq!(client.total, -50.0);
+        assert_eq!(client.total, 150.0);
     }
 
     #[tokio::test]
@@ -346,6 +353,28 @@ mod tests {
         assert_eq!(trex.client(1).unwrap().available, 100.0);
 
         // ignore resolve on transaction without open dispute
+        trex.process_transaction(Transaction {
+            r#type: TransactionType::Resolve,
+            client: 1,
+            tx: 1,
+            amount: 0.0,
+        });
+        assert_eq!(trex.client(1).unwrap().available, 100.0);
+
+        // ignore withdrawal of funds under dispute
+        trex.process_transaction(Transaction {
+            r#type: TransactionType::Dispute,
+            client: 1,
+            tx: 1,
+            amount: 0.0,
+        });
+        trex.process_transaction(Transaction {
+            r#type: TransactionType::Withdrawal,
+            client: 1,
+            tx: 3,
+            amount: 10.0,
+        });
+        assert_eq!(trex.client(1).unwrap().available, 0.0);
         trex.process_transaction(Transaction {
             r#type: TransactionType::Resolve,
             client: 1,
