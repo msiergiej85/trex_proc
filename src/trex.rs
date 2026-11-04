@@ -38,9 +38,9 @@ impl Trex {
                 let mut client = ClientState {
                     state: Client {
                         client: transaction.client,
-                        available: rust_decimal::Decimal::new(0, 0),
-                        held: rust_decimal::Decimal::new(0, 0),
-                        total: rust_decimal::Decimal::new(0, 0),
+                        available: Coins::new(0, 0),
+                        held: Coins::new(0, 0),
+                        total: Coins::new(0, 0),
                         locked: false,
                     },
                     history: Vec::new(),
@@ -175,53 +175,52 @@ mod tests {
     async fn test_basic_operations() {
         let mut trex = Trex::default();
 
-        // single deposit
         trex.process_transaction(Transaction {
             r#type: TransactionType::Deposit,
             client: 1,
             tx: 1,
-            amount: rust_decimal::Decimal::new(10001, 2),
+            amount: Coins::new(10001, 2),
         });
 
         let client = trex.client(1).unwrap();
         assert_eq!(client.client, 1);
-        assert_eq!(client.available.as_f64(), 100.01);
-        assert_eq!(client.total.as_f64(), 100.01);
-        assert_eq!(client.held.as_f64(), 0.0);
+        assert_eq!(client.available.to_f32(), 100.01);
+        assert_eq!(client.total.to_f32(), 100.01);
+        assert_eq!(client.held.to_f32(), 0.0);
         assert!(!client.locked);
 
         trex.process_transaction(Transaction {
             r#type: TransactionType::Deposit,
             client: 1,
-            tx: 1,
-            amount: rust_decimal::Decimal::new(100, 0),
+            tx: 2,
+            amount: Coins::new(100, 0),
         });
         trex.process_transaction(Transaction {
             r#type: TransactionType::Withdrawal,
             client: 1,
-            tx: 2,
-            amount: rust_decimal::Decimal::new(50, 0),
+            tx: 3,
+            amount: Coins::new(50, 0),
         });
 
         let client = trex.client(1).unwrap();
-        assert_eq!(client.available.as_f64(), 150.01);
-        assert_eq!(client.total.as_f64(), 150.01);
+        assert_eq!(client.available.to_f32(), 150.01);
+        assert_eq!(client.total.to_f32(), 150.01);
 
         trex.process_transaction(Transaction {
             r#type: TransactionType::Deposit,
             client: 2,
-            tx: 3,
-            amount: rust_decimal::Decimal::new(200, 0),
+            tx: 4,
+            amount: Coins::new(200, 0),
         });
         trex.process_transaction(Transaction {
             r#type: TransactionType::Withdrawal,
             client: 2,
-            tx: 2,
-            amount: rust_decimal::Decimal::new(50, 0),
+            tx: 5,
+            amount: Coins::new(50, 0),
         });
 
         let client = trex.client(2).unwrap();
-        assert_eq!(client.total.as_f64(), 150.0);
+        assert_eq!(client.total.to_f32(), 150.0);
     }
 
     #[tokio::test]
@@ -231,56 +230,56 @@ mod tests {
             r#type: TransactionType::Deposit,
             client: 1,
             tx: 1,
-            amount: rust_decimal::Decimal::new(100, 0),
+            amount: Coins::new(100, 0),
         });
         trex.process_transaction(Transaction {
             r#type: TransactionType::Dispute,
             client: 1,
             tx: 1,
-            amount: rust_decimal::Decimal::new(0, 0),
+            amount: Coins::new(0, 0),
         });
 
         let client = trex.client(1).unwrap();
-        assert_eq!(client.available.as_f64(), 0.0);
-        assert_eq!(client.held.as_f64(), 100.0);
-        assert_eq!(client.total.as_f64(), 100.0);
+        assert_eq!(client.available.to_f32(), 0.0);
+        assert_eq!(client.held.to_f32(), 100.0);
+        assert_eq!(client.total.to_f32(), 100.0);
 
         trex.process_transaction(Transaction {
             r#type: TransactionType::Deposit,
             client: 1,
             tx: 2,
-            amount: rust_decimal::Decimal::new(10, 0),
+            amount: Coins::new(10, 0),
         });
 
         trex.process_transaction(Transaction {
             r#type: TransactionType::Resolve,
             client: 1,
             tx: 1,
-            amount: rust_decimal::Decimal::new(0, 0),
+            amount: Coins::new(0, 0),
         });
 
         let client = trex.client(1).unwrap();
-        assert_eq!(client.available.as_f64(), 110.0);
-        assert_eq!(client.held.as_f64(), 0.0);
-        assert_eq!(client.total.as_f64(), 110.0);
+        assert_eq!(client.available.to_f32(), 110.0);
+        assert_eq!(client.held.to_f32(), 0.0);
+        assert_eq!(client.total.to_f32(), 110.0);
 
         trex.process_transaction(Transaction {
             r#type: TransactionType::Dispute,
             client: 1,
             tx: 2,
-            amount: rust_decimal::Decimal::new(0, 0),
+            amount: Coins::new(0, 0),
         });
         trex.process_transaction(Transaction {
             r#type: TransactionType::Chargeback,
             client: 1,
             tx: 2,
-            amount: rust_decimal::Decimal::new(0, 0),
+            amount: Coins::new(0, 0),
         });
 
         let client = trex.client(1).unwrap();
-        assert_eq!(client.available.as_f64(), 100.0);
-        assert_eq!(client.held.as_f64(), 0.0);
-        assert_eq!(client.total.as_f64(), 100.0);
+        assert_eq!(client.available.to_f32(), 100.0);
+        assert_eq!(client.held.to_f32(), 0.0);
+        assert_eq!(client.total.to_f32(), 100.0);
         assert!(client.locked);
     }
 
@@ -291,29 +290,29 @@ mod tests {
             r#type: TransactionType::Deposit,
             client: 1,
             tx: 1,
-            amount: rust_decimal::Decimal::new(100, 0),
+            amount: Coins::new(100, 0),
         });
         trex.process_transaction(Transaction {
             r#type: TransactionType::Deposit,
             client: 2,
             tx: 1,
-            amount: rust_decimal::Decimal::new(10, 0),
+            amount: Coins::new(10, 0),
         });
         trex.process_transaction(Transaction {
             r#type: TransactionType::Dispute,
             client: 2,
             tx: 1,
-            amount: rust_decimal::Decimal::new(0, 0),
+            amount: Coins::new(0, 0),
         });
         trex.process_transaction(Transaction {
             r#type: TransactionType::Chargeback,
             client: 2,
             tx: 1,
-            amount: rust_decimal::Decimal::new(0, 0),
+            amount: Coins::new(0, 0),
         });
 
         let client = trex.client(2).unwrap();
-        assert_eq!(client.total.as_f64(), 0.0);
+        assert_eq!(client.total.to_f32(), 0.0);
         assert!(client.locked);
 
         // ignore deposit on locked client
@@ -321,16 +320,16 @@ mod tests {
             r#type: TransactionType::Deposit,
             client: 2,
             tx: 2,
-            amount: rust_decimal::Decimal::new(505, 1),
+            amount: Coins::new(505, 1),
         });
-        assert_eq!(trex.client(2).unwrap().total.as_f64(), 0.0);
+        assert_eq!(trex.client(2).unwrap().total.to_f32(), 0.0);
 
         // ignore dispute on non-existing client
         trex.process_transaction(Transaction {
             r#type: TransactionType::Dispute,
             client: 3,
             tx: 2,
-            amount: rust_decimal::Decimal::new(50, 0),
+            amount: Coins::new(50, 0),
         });
         assert!(trex.client(3).is_none());
 
@@ -339,7 +338,7 @@ mod tests {
             r#type: TransactionType::Dispute,
             client: 3,
             tx: 2,
-            amount: rust_decimal::Decimal::new(50, 0),
+            amount: Coins::new(50, 0),
         });
         assert!(trex.client(3).is_none());
 
@@ -348,39 +347,55 @@ mod tests {
             r#type: TransactionType::Chargeback,
             client: 1,
             tx: 1,
-            amount: rust_decimal::Decimal::new(0, 0),
+            amount: Coins::new(0, 0),
         });
-        assert_eq!(trex.client(1).unwrap().available.as_f64(), 100.0);
+        assert_eq!(trex.client(1).unwrap().available.to_f32(), 100.0);
 
         // ignore resolve on transaction without open dispute
         trex.process_transaction(Transaction {
             r#type: TransactionType::Resolve,
             client: 1,
             tx: 1,
-            amount: rust_decimal::Decimal::new(0, 0),
+            amount: Coins::new(0, 0),
         });
-        assert_eq!(trex.client(1).unwrap().available.as_f64(), 100.0);
+        assert_eq!(trex.client(1).unwrap().available.to_f32(), 100.0);
 
         // ignore withdrawal of funds under dispute
         trex.process_transaction(Transaction {
             r#type: TransactionType::Dispute,
             client: 1,
             tx: 1,
-            amount: rust_decimal::Decimal::new(0, 0),
+            amount: Coins::new(0, 0),
         });
         trex.process_transaction(Transaction {
             r#type: TransactionType::Withdrawal,
             client: 1,
             tx: 3,
-            amount: rust_decimal::Decimal::new(10, 0),
+            amount: Coins::new(10, 0),
         });
-        assert_eq!(trex.client(1).unwrap().available.as_f64(), 0.0);
+        assert_eq!(trex.client(1).unwrap().available.to_f32(), 0.0);
         trex.process_transaction(Transaction {
             r#type: TransactionType::Resolve,
             client: 1,
             tx: 1,
-            amount: rust_decimal::Decimal::new(0, 0),
+            amount: Coins::new(0, 0),
         });
-        assert_eq!(trex.client(1).unwrap().available.as_f64(), 100.0);
+        assert_eq!(trex.client(1).unwrap().available.to_f32(), 100.0);
+    }
+
+    #[tokio::test]
+    async fn test_decimals() {
+        let mut trex = Trex::default();
+
+        trex.process_transaction(Transaction {
+            r#type: TransactionType::Deposit,
+            client: 1,
+            tx: 1,
+            amount: Coins::new(948700, 4),
+        });
+
+        let client = trex.client(1).unwrap();
+        assert_eq!(client.client, 1);
+        assert_eq!(client.available.to_f32(), 94.87);
     }
 }

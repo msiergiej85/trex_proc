@@ -10,8 +10,9 @@ name = "trex_proc"
 name = "trex_proc"
 
 [dependencies]
-rust_decimal = "1.43.0"
+fixdec = { version = "0.1.0", features = ["serde"] }
 csv-async = { version = "1.3.1", features = ["tokio", "serde", "with_serde"] }
+derive_more = { version = "2.1.1", features = ["deref", "deref_mut", "eq", "add", "add_assign", "display", "from_str"] }
 env_logger = "0.11.11"
 eyre = "0.6.14"
 serde = { version = "1.0.229", features = ["derive"] }

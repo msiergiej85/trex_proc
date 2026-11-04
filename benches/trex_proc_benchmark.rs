@@ -1,7 +1,7 @@
 use criterion::{Criterion, async_executor::FuturesExecutor, criterion_group, criterion_main};
 use rand::RngExt;
 use trex_proc::trex::Trex;
-use trex_proc::{Transaction, TransactionId, TransactionType};
+use trex_proc::{Coins, Transaction, TransactionId, TransactionType};
 
 const NUM_CLIENTS: u16 = 500;
 const NUM_TRANSACTIONS: TransactionId = 50000;
@@ -17,8 +17,7 @@ fn bench_fuzzy(c: &mut Criterion) {
                 let tx = Transaction {
                     client: rng.random_range(1..=NUM_CLIENTS),
                     tx: tx_id,
-                    amount: rust_decimal::Decimal::from_f64_retain(rng.random_range(0.0..=10000.0))
-                        .unwrap(),
+                    amount: rng.random_range(0.0..=10000.0).try_into().unwrap(),
                     r#type: if rng.random_bool(0.52) {
                         TransactionType::Deposit
                     } else {
@@ -42,7 +41,7 @@ fn bench_fuzzy(c: &mut Criterion) {
                             tx: transaction.tx,
                             r#type: TransactionType::Dispute,
                             client: transaction.client,
-                            amount: rust_decimal::Decimal::new(0, 0),
+                            amount: Coins::new(0, 0),
                         };
                         trex.process_transaction(tx.clone());
                         pending.push(tx);
@@ -55,7 +54,7 @@ fn bench_fuzzy(c: &mut Criterion) {
                                 TransactionType::Chargeback
                             },
                             client: transaction.client,
-                            amount: rust_decimal::Decimal::new(0, 0),
+                            amount: Coins::new(0, 0),
                         });
                     }
                 }
@@ -71,7 +70,7 @@ fn bench_fuzzy(c: &mut Criterion) {
                             TransactionType::Chargeback
                         },
                         client: transaction.client,
-                        amount: rust_decimal::Decimal::new(0, 0),
+                        amount: Coins::new(0, 0),
                     });
                 }
             }
