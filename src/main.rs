@@ -9,9 +9,12 @@ use trex_proc::trex::Trex;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
+    // For this simple app `env_logger` seems to be enough.
+    // Should be trivial to switch to `tracing` framework when needed.
     env_logger::Builder::new()
-        .target(env_logger::Target::Stderr)
+        .target(env_logger::Target::Stderr) // should not pollute stdout with logs
         .init();
+
     let mut args = env::args();
     let input_path = PathBuf::from(
         args.nth(1)
@@ -24,6 +27,12 @@ async fn main() -> eyre::Result<()> {
         .trim(csv_async::Trim::All)
         .create_deserializer(in_file);
     let mut records = rdr.deserialize::<Transaction>();
+
+    // For this simple app single Trex instance is enough.
+    // In more demanding context multiple Trex instances could be created, to handle different groups of clients.
+    // Client transactions would be then distributed by simple modulo operation on client ID or Rendezvous hashing
+    // if number of trexes is expected to change.
+    // Each trex instance could run in separate task and transactions would be sent e.g. using mpsc channel.
     let mut trex = Trex::default();
     while let Some(record) = records.next().await {
         let Ok(transaction) = record.inspect_err(|err| warn!("invalid transaction {err:#}")) else {

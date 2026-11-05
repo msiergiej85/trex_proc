@@ -4,6 +4,7 @@ use derive_more::{Add, AddAssign, Deref, DerefMut, Sub, SubAssign};
 use serde::{Deserialize, Serialize, Serializer};
 use std::cmp::Ordering;
 
+/// Transaction value type wrapper. Just in case if precision requirements would change.
 #[derive(
     Debug,
     Serialize,
@@ -54,6 +55,7 @@ pub enum TransactionType {
     Chargeback,
 }
 
+/// Rust representation of transaction, according to spec.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Transaction {
     pub r#type: TransactionType,
@@ -62,6 +64,7 @@ pub struct Transaction {
     pub amount: Coins,
 }
 
+/// Rust representation of client account state, according to spec.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Client {
     pub client: ClientId,

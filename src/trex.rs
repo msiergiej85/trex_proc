@@ -18,17 +18,25 @@ impl From<Transaction> for Tx {
     }
 }
 
+/// Internal representation of Client account.
 struct ClientState {
+    /// Current account state.
     state: Client,
+    /// All transactions' history.
     history: Vec<Tx>,
 }
 
+/// `Trex` Transactions processor. Handle transactions and maintain account state for group of Clients.
+/// It is up to user how clients are distributed over `Trex` instances, but once first transaction
+/// for some client is processed by `Trex` then user must guarantee that all other transactions associated
+/// with given client will go to the same instance of `Trex`.
 #[derive(Default)]
 pub struct Trex {
     clients: HashMap<ClientId, ClientState>,
 }
 
 impl Trex {
+    /// Validate transaction and update Client account state accordingly.
     pub fn process_transaction(&mut self, transaction: Transaction) {
         match self.clients.entry(transaction.client) {
             Entry::Occupied(entry) => {
@@ -52,10 +60,12 @@ impl Trex {
         }
     }
 
+    /// Get list of Client ids maintained by this `Trex` so far.
     pub fn clients(&self) -> Vec<ClientId> {
         self.clients.keys().cloned().collect()
     }
 
+    /// Get current Client account state, or `None` if not found.
     pub fn client(&self, id: ClientId) -> Option<Client> {
         self.clients.get(&id).map(|client| client.state.clone())
     }
